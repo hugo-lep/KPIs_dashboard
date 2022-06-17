@@ -1,0 +1,14 @@
+name: understand_delay_test
+title: understand_delay_test
+username:
+account: pascan
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 6433911
+bundleId: 6013617
+url: https://pascan.shinyapps.io/understand_delay_test/
+when: 1655380084.79539
+lastSyncTime: 1655380084.7954
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: amelia_report_scrapping.R|app.R|FAAR_flight.R|review_delays.R|static_files/functions/functions.R|test_cond_cell.R
