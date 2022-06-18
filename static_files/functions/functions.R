@@ -4,17 +4,17 @@ fct_legs <- function(my_data){
 }
 
 #########################################################
-
+#test
 
 
 #########################################################
-#data <- test26[[3]][[1]]
+#data <- test26[[1]][[1]]
 
 
 fct_complete_flt <- function(data){
-  data %>% map_df(fct_leg_details)} #%>% 
+  data %>% map_df(fct_leg_details) #%>% 
 #    arrange(flightLeg.departure.scheduledTime)
-
+}
 
 fct_leg_details <- function(data){
   unlist_data <- enframe(unlist(data))
@@ -57,13 +57,17 @@ fct_leg_details <- function(data){
       delays_data3 %>%
         arrange(desc(delayMinutes)) %>% 
         slice(-1) %>%
-        mutate(note_previous_delay = str_c(delayMinutes,"min: ",note,"(",delayCode.code,")")) %>% 
+        mutate(note_previous_delay = str_c("#",delayCode.code,"(",delayMinutes,"min): ",note)) %>% 
         select(note_previous_delay) %>% 
         as_vector() %>% 
-        paste(collapse = " + ")
+        paste0(collapse = "<br>")
     }
   
-
+#previous_delay %>% as_vector() %>%  paste0(collapse = "<br>")
+  
+  
+  
+  
   output <-  bind_cols(leg_data,delays_data4) %>% 
     mutate(included_delay = previous_delay)
   

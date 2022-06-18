@@ -14,7 +14,7 @@ library(shinymanager)
 
 
 
-source("static_files/functions/functions2.R")
+source("static_files/functions/functions.R")
 login_info <- read_rds("static_files/login.rds")
 main_url <- 'https://pascan-api.intelisys.ca/RESTv1/'
 
