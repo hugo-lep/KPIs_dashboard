@@ -14,7 +14,7 @@ library(shinymanager)
 
 
 
-source("static_files/functions/functions.R")
+source("static_files/functions/functions2.R")
 login_info <- read_rds("static_files/login.rds")
 main_url <- 'https://pascan-api.intelisys.ca/RESTv1/'
 
@@ -154,7 +154,11 @@ ui <- secure_app(
              arrival.estimatedTime = ymd_hms(arrival.estimatedTime, tz = "UTC"),
              flightLeg.arrival.scheduledTime = ymd_hms(flightLeg.arrival.scheduledTime, tz = "UTC"),
              flt_numb = str_c(flt_numb," leg #",legNumber)) %>% 
-      arrange(tail,depart_zulu_prevu)
+      arrange(tail,depart_zulu_prevu) %>% 
+      
+      mutate(note = if_else(included_delay == "" | is.na(included_delay),
+                            str_c("<b>",note,"</b>"),
+                            str_c("<b>",note,"</b>","<br><u>included delay</u><br>",included_delay)))
     
 #      out <-  if(input$if_delay == FALSE){out
 #        }else{
@@ -185,8 +189,10 @@ ui <- secure_app(
                d_vol_prevu = difftime(flightLeg.arrival.scheduledTime,depart_zulu_prevu, units = "mins"),
                d_vol_reel = difftime(arrival.estimatedTime,departure.estimatedTime, units = "min"),
                diff_blk_T = as.character(d_vol_reel - d_vol_prevu),
+#               diff_blk_T = str_c(as.character(d_vol_reel - d_vol_prevu)," mins"),
                d_vol_prevu = as.character(d_vol_prevu),
-               d_vol_reel = as.character(d_vol_reel)) %>% #,
+               d_vol_reel = as.character(d_vol_reel),
+               depart_zulu_prevu = str_sub(as.character(depart_zulu_prevu),-8,-4)) %>% #,
 #                depart_zulu_prevu = as.date(depart_zulu_prevu, )) %>%   #car rhandsometable ne semble pas accepter class difftime
         select(
           depart_zulu_prevu,
@@ -200,21 +206,36 @@ ui <- secure_app(
           diff_blk_T,
   any_of(c("delayCode.code",
          "delayCode.name",
-         "note",
-         "included_delay"))) %>% 
+         "note"))) %>% #,
+#         "included_delay"))) %>% 
 #          Delay_code = delayCode.code,
 #          Delay_name = delayCode.name,
 #          note,
 #          included_delay) %>% 
+  rename("flight #" = flt_numb,
+         "Depart (Zulu)" = depart_zulu_prevu,
+         "Diff blk time" = diff_blk_T,
+         "Delay Code" = delayCode.code,
+         "Delay Name" = delayCode.name) %>% 
+#         "Diff blk time" = diff_blk_T) %>% 
           
           rhandsontable(
+#            rename("flight #" = flt_numb),
             col_highlight = 5,
 #            rowHeaders = FALSE,
-            readOnly = TRUE) %>% 
+            readOnly = TRUE,
+allowedTags = "<em><b><br><u><big>") %>% 
           
-          hot_cols(columnSorting = TRUE) %>%
-          hot_col("diff_blk_T",
-                  renderer = "
+  hot_cols(columnSorting = TRUE) %>%
+#  hot_col("depart_zulu_prevu", dateFormat = "hh:mm:ss"),
+  hot_col("Depart (Zulu)",halign = "htCenter") %>% 
+  hot_col("note",renderer = "html") %>% 
+  hot_col("note",renderer = htmlwidgets::JS("safeHtmlRenderer")) %>%
+  hot_col("Delay Code",halign = "htCenter") %>% 
+#  hot_col("note", colWidths = 500) %>% 
+  hot_col("Diff blk time", halign = "htCenter") %>% 
+  hot_col("Diff blk time",
+          renderer = "
                   function (instance, td, row, col, prop, value, cellProperties) {
              Handsontable.renderers.NumericRenderer.apply(this, arguments);
              if (value > 0) {
