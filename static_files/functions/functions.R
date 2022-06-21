@@ -109,10 +109,11 @@ fct_code93 <- function(data){
     
     mutate(delayCode.name = if_else(delayCode.code == "93",
                                     str_c(delayCode.name,
-                                          '<br><small style="color:red;">Previous flight: ',flt_numb2," was: ",delay_arr," mins late","</small>",
-                                          '<br><small style="color:red;">Rotational cause by: flight ', initial_cause,"</small>"),
-                                    delayCode.name))%>% 
-    select(Dep,Arr,1:8) #%>% 
+                                          '<br><small>Previous flt: ',flt_numb2," arrive: ",
+                                          '<span style="color:red;">',delay_arr," mins late","</span>",
+                                          '<br> Rotational cause by: flight ','<span style="color:red;">', initial_cause,"</span>","</small>"),
+                                    delayCode.name))#%>% 
+#    select(Dep,Arr,1:8) #%>% 
 #    mutate(delay_dep = as.character(delay_dep))
 }
 

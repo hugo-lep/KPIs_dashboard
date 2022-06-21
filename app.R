@@ -139,8 +139,10 @@ server <- function(input, output, session) {
       map_df(fct_complete_flt)
     out <- out %>% 
       select(depart_zulu_prevu =flightLeg.departure.scheduledTime,
-             arrival.estimatedTime,
-             flightLeg.arrival.scheduledTime,
+             depart_zulu_reel = departure.estimatedTime,
+             arrivee_zulu_prevu = flightLeg.arrival.scheduledTime,
+             arrivee_zulu_reel = arrival.estimatedTime,
+             
              flt_numb = flight.flightNumber,
              Dep = departure.airport.code,
              Arr = arrival.airport.code,
@@ -150,10 +152,12 @@ server <- function(input, output, session) {
              any_of(cols_selection)) %>%                                         #################
     filter(date(depart_zulu_prevu) == input$date_selected) %>%
       mutate(depart_zulu_prevu = ymd_hms(depart_zulu_prevu, tz = "UTC"),
-             departure.estimatedTime = ymd_hms(departure.estimatedTime, tz = "UTC"),
-             arrival.estimatedTime = ymd_hms(arrival.estimatedTime, tz = "UTC"),
-             flightLeg.arrival.scheduledTime = ymd_hms(flightLeg.arrival.scheduledTime, tz = "UTC"),
-             flt_numb = str_c(flt_numb," leg #",legNumber)) %>% 
+             depart_zulu_reel = ymd_hms(depart_zulu_reel, tz = "UTC"),
+             arrivee_zulu_reel = ymd_hms(arrivee_zulu_reel, tz = "UTC"),
+             arrivee_zulu_prevu = ymd_hms(arrivee_zulu_prevu, tz = "UTC"),
+             flt_numb = str_c(flt_numb," leg #",legNumber),
+             delay_dep = difftime(depart_zulu_reel,depart_zulu_prevu, units = "mins"),
+             delay_arr =difftime(arrivee_zulu_reel,arrivee_zulu_prevu, units = "mins")) %>% 
       arrange(tail,depart_zulu_prevu) %>% 
       
       mutate(note = if_else(included_delay == "" | is.na(included_delay),
@@ -171,25 +175,31 @@ server <- function(input, output, session) {
     out <-  if(input$if_delay == FALSE){test26()
     }else{
       test26() %>% filter(
-        difftime(departure.estimatedTime,depart_zulu_prevu,units = "mins") %>% as.numeric() >= time_delay2())
+        difftime(depart_zulu_reel,depart_zulu_prevu,units = "mins") %>% as.numeric() >= time_delay2())
       #        difftime(departure.estimatedTime,depart_zulu_prevu,units = "mins") %>% as.numeric() >= input$min_retard)
     }
   })
   
-  
+  test28 <- reactive({
+    test27() %>% 
+      group_by(tail) %>% 
+      group_split() %>% 
+      map_df(fct_code93)
+    
+  })
   
   
   
   output$test <- renderRHandsontable(
-    test27() %>% 
+    test28() %>% 
       filter(flightLegStatus.cancelled != TRUE) %>% 
       #        select(-starts_with("flightLegStatus")) %>% 
-      mutate(Delay = difftime(departure.estimatedTime,depart_zulu_prevu,units = "mins"),
+      mutate(Delay = difftime(depart_zulu_reel,depart_zulu_prevu,units = "mins"),
              Delay = str_c(as.character(Delay)," mins"),
-             d_vol_prevu = difftime(flightLeg.arrival.scheduledTime,depart_zulu_prevu, units = "mins"),
-             d_vol_reel = difftime(arrival.estimatedTime,departure.estimatedTime, units = "min"),
+#             delay_arr =difftime(arrivee_zulu_reel,arrivee_zulu_prevu, units = "mins"),
+             d_vol_prevu = difftime(arrivee_zulu_prevu,depart_zulu_prevu, units = "mins"),
+             d_vol_reel = difftime(arrivee_zulu_reel,depart_zulu_reel, units = "min"),
              diff_blk_T = as.character(d_vol_reel - d_vol_prevu),
-             #               diff_blk_T = str_c(as.character(d_vol_reel - d_vol_prevu)," mins"),
              d_vol_prevu = as.character(d_vol_prevu),
              d_vol_reel = as.character(d_vol_reel),
              depart_zulu_prevu = str_sub(as.character(depart_zulu_prevu),-8,-4)) %>% #,
@@ -224,13 +234,15 @@ server <- function(input, output, session) {
         col_highlight = 5,
         #            rowHeaders = FALSE,
         readOnly = TRUE,
-        allowedTags = "<em><b><br><u><big>") %>% 
+        allowedTags = "<br><p><small><h3><u><span>") %>% 
+#        allowedTags = "<em><b><br><u><big>") %>% 
       
       hot_cols(columnSorting = TRUE) %>%
       #  hot_col("depart_zulu_prevu", dateFormat = "hh:mm:ss"),
       hot_col("Depart (Zulu)",halign = "htCenter") %>% 
-      hot_col("note",renderer = "html") %>% 
-      hot_col("note",renderer = htmlwidgets::JS("safeHtmlRenderer")) %>%
+      hot_col(c("Delay Name","note"),renderer = "html") %>% 
+      hot_col(c("Delay Name","note"),renderer = htmlwidgets::JS("safeHtmlRenderer")) %>%
+  
       hot_col("Delay Code",halign = "htCenter") %>% 
       #  hot_col("note", colWidths = 500) %>% 
       hot_col("Diff blk time", halign = "htCenter") %>% 
@@ -244,6 +256,7 @@ server <- function(input, output, session) {
              td.style.color = 'green';
              }
        }") %>% 
+
       hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
   )
   

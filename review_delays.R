@@ -22,10 +22,10 @@ delaycodes <- content(GET("https://pascan-api.intelisys.ca/RESTv1/delayCodes",
 
 
 source("static_files/functions/functions.R")
-date_margin <- c(as.character(today() - ddays(1)),
-                 as.character(today() + ddays(0)))
-date_selected <- today()-1
-date_selected2 <- today()
+date_margin <- c(as.character(today() - ddays(2)),
+                 as.character(today() + ddays(1)))
+date_selected <- today()-2
+date_selected2 <- today()-1
 
 main_url <- 'https://pascan-api.intelisys.ca/RESTv1/'
 ressources <- str_c("flightStatuses?earliestDeparture=",
@@ -140,3 +140,4 @@ test28 %>%
   hot_col("note",renderer = "html") %>% 
   hot_col("note",renderer = htmlwidgets::JS("safeHtmlRenderer")) %>% 
   hot_col("flt_numb", colHeader = "test")
+

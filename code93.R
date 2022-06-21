@@ -4,12 +4,13 @@ library(rhandsontable)
 
 code93 <- test26 %>% 
   filter(flightLegStatus.cancelled != TRUE) %>% 
-  select(depart_zulu_prevu,depart_zulu_reel,delay_dep,delay_arr,flt_numb,tail,delayCode.code,delayCode.name,note,Arr,Dep) %>% 
-  filter(tail == "C-FKSL")
+  select(depart_zulu_prevu,depart_zulu_reel,delay_dep,delay_arr,flt_numb,tail,delayCode.code,delayCode.name,note,Arr,Dep) #%>% 
+#  filter(tail == "C-FKSL")
 
 code93_1 <- code93 %>% group_by(tail) %>% 
   group_split() %>% 
-  map_df(fct_code93)
+  map_df(fct_code93) %>% 
+  mutate(depart_zulu_prevu = as.character(depart_zulu_prevu))
 
 
 
