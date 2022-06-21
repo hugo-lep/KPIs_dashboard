@@ -24,8 +24,8 @@ delaycodes <- content(GET("https://pascan-api.intelisys.ca/RESTv1/delayCodes",
 source("static_files/functions/functions.R")
 date_margin <- c(as.character(today() - ddays(1)),
                  as.character(today() + ddays(0)))
-date_selected <- "2022-06-14"
-date_selected2 <- "2022-06-15"
+date_selected <- today()-1
+date_selected2 <- today()
 
 main_url <- 'https://pascan-api.intelisys.ca/RESTv1/'
 ressources <- str_c("flightStatuses?earliestDeparture=",
@@ -45,15 +45,11 @@ flightstatuses <- content(GET(str_c(main_url,
 
 
 
-test26 <- map(flightstatuses,fct_legs) %>% 
-  map_df(fct_complete_flt)
-
-
 cols_selection <- c(
-  "flightLeg.departure.scheduledTime",
-  "departure.estimatedTime",
-  "flightLeg.arrival.scheduledTime",
-  "arrival.estimatedTime",
+#  "flightLeg.departure.scheduledTime",
+#  "departure.estimatedTime",
+#  "flightLeg.arrival.scheduledTime",
+#  "arrival.estimatedTime",
 #  "flight.flightNumber",
 #  "tail.identifier",
 #  "departure.airport.code",
@@ -65,14 +61,13 @@ cols_selection <- c(
   "included_delay",
   "departure.airport.href")
 
-#test <- test26 %>% 
-#  filter(delayMinutes == 15)
 
-
-test27 <- test26 %>% 
+test26 <- map(flightstatuses,fct_legs) %>% 
+  map_df(fct_complete_flt) %>% 
   select(depart_zulu_prevu =flightLeg.departure.scheduledTime,
-         arrival.estimatedTime,
-         flightLeg.arrival.scheduledTime,
+         depart_zulu_reel = departure.estimatedTime,
+         arrivee_zulu_prevu = flightLeg.arrival.scheduledTime,
+         arrivee_zulu_reel = arrival.estimatedTime,
          flt_numb = flight.flightNumber,
          Dep = departure.airport.code,
          Arr = arrival.airport.code,
@@ -80,30 +75,23 @@ test27 <- test26 %>%
          tail = tail.identifier,
          starts_with("flightLegStatus"),
          any_of(cols_selection)) %>% #############################################################
-  filter(date(depart_zulu_prevu) == date("2022-06-14"))    %>% 
+#  filter(date(depart_zulu_prevu) == date_selected)    %>% 
+  mutate(depart_zulu_prevu = ymd_hms(depart_zulu_prevu, tz = "UTC"),
+         depart_zulu_reel = ymd_hms(depart_zulu_reel, tz = "UTC"),
+         arrivee_zulu_reel = ymd_hms(arrivee_zulu_reel, tz = "UTC"),
+         arrivee_zulu_prevu = ymd_hms(arrivee_zulu_prevu, tz = "UTC"),
+         flt_numb = str_c(flt_numb," leg #",legNumber),
+         delay_dep = difftime(depart_zulu_reel,depart_zulu_prevu, units = "mins"),
+         delay_arr =difftime(arrivee_zulu_reel,arrivee_zulu_prevu, units = "mins")) %>% 
+  arrange(tail,depart_zulu_reel) %>% 
   
   mutate(note = if_else(included_delay == "" | is.na(included_delay),
                         str_c("<b>",note,"</b>"),
-                        str_c("<b>",note,"</b>","<br><u>included delay</u><br>",included_delay)))
+                        str_c("<b>",note,"</b>","<br><u>included delay</u><br>",
+                              '<small style="color:red;">',included_delay,"</small>")))
                           
-#           str_c(note,"<u>included delay</u><br>",included_delay))
-#  filter(flightLegStatus.cancelled != TRUE)
-#  filter(flightLegStatus.active == TRUE | flightLegStatus.closed == TRUE) %>% 
-#  select(-starts_with("flightLegStatus"))
 
-
-
-
-test28 <- test27 %>% 
-#  filter(flightLegStatus.cancelled != TRUE) %>% 
-#  select(-starts_with("flightLegStatus")) %>% 
-  mutate(depart_zulu_prevu = ymd_hms(depart_zulu_prevu, tz = "UTC"),
-         departure.estimatedTime = ymd_hms(departure.estimatedTime, tz = "UTC"),
-         arrival.estimatedTime = ymd_hms(arrival.estimatedTime, tz = "UTC"),
-         flightLeg.arrival.scheduledTime = ymd_hms(flightLeg.arrival.scheduledTime, tz = "UTC"),
-         flt_numb = str_c(flt_numb," leg #",legNumber))
-
-cancel_flts <- test28 %>% 
+cancel_flts <- test26 %>% 
   filter(flightLegStatus.cancelled == TRUE) %>% 
   select(depart_zulu_prevu,flt_numb,Dep,Arr)
 
@@ -121,12 +109,12 @@ column_selected <- c("depart_zulu_prevu",
                      "included_delay",
                      "departure.airport.href")
 
-test29 <- test28 %>% 
-  mutate(Delay = difftime(departure.estimatedTime,depart_zulu_prevu,units = "mins"),
-         d_vol_prevu = flightLeg.arrival.scheduledTime - depart_zulu_prevu,
-         d_vol_reel = arrival.estimatedTime-departure.estimatedTime,
+test27 <- test26 %>% 
+  mutate(d_vol_prevu = arrivee_zulu_prevu - depart_zulu_prevu,
+         d_vol_reel = arrivee_zulu_reel-depart_zulu_reel,
          diff_blk_T = d_vol_reel - d_vol_prevu)
-test30 <- test29 %>% 
+
+test28 <- test27 %>% 
   select(
     depart_zulu_prevu,
     d_vol_prevu,
@@ -135,7 +123,7 @@ test30 <- test29 %>%
     Dep,
     Arr,
     tail,
-    Delay,
+    delay_dep,
     diff_blk_T,
 any_of(c("delayCode.code",###########################################
          "delayCode.name",
@@ -143,14 +131,10 @@ any_of(c("delayCode.code",###########################################
 #         "included_delay")),
     departure.airport.href)
     
- 
-
-#test29 %>% 
-##  filter(!is.na(delayCode.name)) %>% 
-#  write_csv("delay_a_comprendre.csv")
 
 
-test30 %>% 
+
+test28 %>% 
   select(flt_numb,note) %>% 
   rhandsontable(allowedTags = "<em><b><br><u><big>") %>% 
   hot_col("note",renderer = "html") %>% 

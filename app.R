@@ -97,30 +97,30 @@ ui <- secure_app(
     
   )
 )
+
+
+#########################################################################################################
+#########################################################################################################
+#########################################################################################################
+
+
+server <- function(input, output, session) {
   
+  # check_credentials returns a function to authenticate users
+  res_auth <- secure_server(
+    check_credentials = check_credentials(credentials)
+  )
   
-  #########################################################################################################
-  #########################################################################################################
-  #########################################################################################################
+  output$auth_output <- renderPrint({
+    reactiveValuesToList(res_auth)
+  })
   
-  
-  server <- function(input, output, session) {
-    
-    # check_credentials returns a function to authenticate users
-    res_auth <- secure_server(
-      check_credentials = check_credentials(credentials)
-    )
-    
-    output$auth_output <- renderPrint({
-      reactiveValuesToList(res_auth)
-    })
-    
-    ressources <- reactive(
-      str_c("flightStatuses?earliestDeparture=",
-#          "2022-05-06",
+  ressources <- reactive(
+    str_c("flightStatuses?earliestDeparture=",
+          #          "2022-05-06",
           input$date_selected,
           "&latestDeparture=",
-#          "2022-05-07")
+          #          "2022-05-07")
           input$date_selected + ddays(1))
   )
   
@@ -148,7 +148,7 @@ ui <- secure_app(
              tail = tail.identifier,         
              starts_with("flightLegStatus"),
              any_of(cols_selection)) %>%                                         #################
-      filter(date(depart_zulu_prevu) == input$date_selected) %>%
+    filter(date(depart_zulu_prevu) == input$date_selected) %>%
       mutate(depart_zulu_prevu = ymd_hms(depart_zulu_prevu, tz = "UTC"),
              departure.estimatedTime = ymd_hms(departure.estimatedTime, tz = "UTC"),
              arrival.estimatedTime = ymd_hms(arrival.estimatedTime, tz = "UTC"),
@@ -160,12 +160,12 @@ ui <- secure_app(
                             str_c("<b>",note,"</b>"),
                             str_c("<b>",note,"</b>","<br><u>included delay</u><br>",included_delay)))
     
-#      out <-  if(input$if_delay == FALSE){out
-#        }else{
-#          out %>% filter(
-#            difftime(departure.estimatedTime,depart_zulu_prevu,units = "mins") %>% as.numeric() >= time_delay2())
- #     }
-      })
+    #      out <-  if(input$if_delay == FALSE){out
+    #        }else{
+    #          out %>% filter(
+    #            difftime(departure.estimatedTime,depart_zulu_prevu,units = "mins") %>% as.numeric() >= time_delay2())
+    #     }
+  })
   
   test27 <- reactive({
     out <-  if(input$if_delay == FALSE){test26()
@@ -175,67 +175,67 @@ ui <- secure_app(
       #        difftime(departure.estimatedTime,depart_zulu_prevu,units = "mins") %>% as.numeric() >= input$min_retard)
     }
   })
-      
-
+  
+  
   
   
   
   output$test <- renderRHandsontable(
-          test27() %>% 
-        filter(flightLegStatus.cancelled != TRUE) %>% 
-#        select(-starts_with("flightLegStatus")) %>% 
-        mutate(Delay = difftime(departure.estimatedTime,depart_zulu_prevu,units = "mins"),
-               Delay = str_c(as.character(Delay)," mins"),
-               d_vol_prevu = difftime(flightLeg.arrival.scheduledTime,depart_zulu_prevu, units = "mins"),
-               d_vol_reel = difftime(arrival.estimatedTime,departure.estimatedTime, units = "min"),
-               diff_blk_T = as.character(d_vol_reel - d_vol_prevu),
-#               diff_blk_T = str_c(as.character(d_vol_reel - d_vol_prevu)," mins"),
-               d_vol_prevu = as.character(d_vol_prevu),
-               d_vol_reel = as.character(d_vol_reel),
-               depart_zulu_prevu = str_sub(as.character(depart_zulu_prevu),-8,-4)) %>% #,
-#                depart_zulu_prevu = as.date(depart_zulu_prevu, )) %>%   #car rhandsometable ne semble pas accepter class difftime
-        select(
-          depart_zulu_prevu,
-          flt_numb,
-          Dep,
-          Arr,
-          tail,
-          Delay,
-#          d_vol_prevu,
-#          d_vol_reel,
-          diff_blk_T,
-  any_of(c("delayCode.code",
-         "delayCode.name",
-         "note"))) %>% #,
-#         "included_delay"))) %>% 
-#          Delay_code = delayCode.code,
-#          Delay_name = delayCode.name,
-#          note,
-#          included_delay) %>% 
-  rename("flight #" = flt_numb,
-         "Depart (Zulu)" = depart_zulu_prevu,
-         "Diff blk time" = diff_blk_T,
-         "Delay Code" = delayCode.code,
-         "Delay Name" = delayCode.name) %>% 
-#         "Diff blk time" = diff_blk_T) %>% 
-          
-          rhandsontable(
-#            rename("flight #" = flt_numb),
-            col_highlight = 5,
-#            rowHeaders = FALSE,
-            readOnly = TRUE,
-allowedTags = "<em><b><br><u><big>") %>% 
-          
-  hot_cols(columnSorting = TRUE) %>%
-#  hot_col("depart_zulu_prevu", dateFormat = "hh:mm:ss"),
-  hot_col("Depart (Zulu)",halign = "htCenter") %>% 
-  hot_col("note",renderer = "html") %>% 
-  hot_col("note",renderer = htmlwidgets::JS("safeHtmlRenderer")) %>%
-  hot_col("Delay Code",halign = "htCenter") %>% 
-#  hot_col("note", colWidths = 500) %>% 
-  hot_col("Diff blk time", halign = "htCenter") %>% 
-  hot_col("Diff blk time",
-          renderer = "
+    test27() %>% 
+      filter(flightLegStatus.cancelled != TRUE) %>% 
+      #        select(-starts_with("flightLegStatus")) %>% 
+      mutate(Delay = difftime(departure.estimatedTime,depart_zulu_prevu,units = "mins"),
+             Delay = str_c(as.character(Delay)," mins"),
+             d_vol_prevu = difftime(flightLeg.arrival.scheduledTime,depart_zulu_prevu, units = "mins"),
+             d_vol_reel = difftime(arrival.estimatedTime,departure.estimatedTime, units = "min"),
+             diff_blk_T = as.character(d_vol_reel - d_vol_prevu),
+             #               diff_blk_T = str_c(as.character(d_vol_reel - d_vol_prevu)," mins"),
+             d_vol_prevu = as.character(d_vol_prevu),
+             d_vol_reel = as.character(d_vol_reel),
+             depart_zulu_prevu = str_sub(as.character(depart_zulu_prevu),-8,-4)) %>% #,
+      #                depart_zulu_prevu = as.date(depart_zulu_prevu, )) %>%   #car rhandsometable ne semble pas accepter class difftime
+      select(
+        depart_zulu_prevu,
+        flt_numb,
+        Dep,
+        Arr,
+        tail,
+        Delay,
+        #          d_vol_prevu,
+        #          d_vol_reel,
+        diff_blk_T,
+        any_of(c("delayCode.code",
+                 "delayCode.name",
+                 "note"))) %>% #,
+      #         "included_delay"))) %>% 
+      #          Delay_code = delayCode.code,
+      #          Delay_name = delayCode.name,
+      #          note,
+      #          included_delay) %>% 
+      rename("flight #" = flt_numb,
+             "Depart (Zulu)" = depart_zulu_prevu,
+             "Diff blk time" = diff_blk_T,
+             "Delay Code" = delayCode.code,
+             "Delay Name" = delayCode.name) %>% 
+      #         "Diff blk time" = diff_blk_T) %>% 
+      
+      rhandsontable(
+        #            rename("flight #" = flt_numb),
+        col_highlight = 5,
+        #            rowHeaders = FALSE,
+        readOnly = TRUE,
+        allowedTags = "<em><b><br><u><big>") %>% 
+      
+      hot_cols(columnSorting = TRUE) %>%
+      #  hot_col("depart_zulu_prevu", dateFormat = "hh:mm:ss"),
+      hot_col("Depart (Zulu)",halign = "htCenter") %>% 
+      hot_col("note",renderer = "html") %>% 
+      hot_col("note",renderer = htmlwidgets::JS("safeHtmlRenderer")) %>%
+      hot_col("Delay Code",halign = "htCenter") %>% 
+      #  hot_col("note", colWidths = 500) %>% 
+      hot_col("Diff blk time", halign = "htCenter") %>% 
+      hot_col("Diff blk time",
+              renderer = "
                   function (instance, td, row, col, prop, value, cellProperties) {
              Handsontable.renderers.NumericRenderer.apply(this, arguments);
              if (value > 0) {
@@ -244,11 +244,11 @@ allowedTags = "<em><b><br><u><big>") %>%
              td.style.color = 'green';
              }
        }") %>% 
-  hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
+      hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
   )
-
   
-
+  
+  
   time_delay2 <- reactive({
     case_when(input$min_retard == time_delay[1]~1,
               input$min_retard == time_delay[2]~9)
@@ -260,8 +260,8 @@ allowedTags = "<em><b><br><u><big>") %>%
       select(depart_zulu_prevu,flt_numb,Dep,Arr,tail) %>% 
       
       rhandsontable() %>% 
-        hot_cols(colWidths = 200,
-                 halign = "htCenter") %>% 
+      hot_cols(colWidths = 200,
+               halign = "htCenter") %>% 
       hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
   )
   
