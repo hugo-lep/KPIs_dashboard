@@ -5,10 +5,10 @@ account: pascan
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 6370141
-bundleId: 5991082
+bundleId: 6034127
 url: https://pascan.shinyapps.io/understand_delay/
-when: 1654737236.94645
-lastSyncTime: 1654737236.94646
+when: 1655946370.03155
+lastSyncTime: 1655946370.03156
 asMultiple: FALSE
 asStatic: FALSE
-ignoredFiles: app2.R|FAAR_flight.R|review_delays.R|test_cond_cell.R
+ignoredFiles: amelia_report_scrapping.R|code93.R|FAAR_flight.R|review_delays.R|test_cond_cell.R

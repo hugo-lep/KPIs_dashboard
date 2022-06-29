@@ -2,7 +2,7 @@ library(tidyverse)
 library(rhandsontable)
 
 
-code93 <- test26 %>% 
+code93 <- test28 %>% 
   filter(flightLegStatus.cancelled != TRUE) %>% 
   select(depart_zulu_prevu,depart_zulu_reel,delay_dep,delay_arr,flt_numb,tail,delayCode.code,delayCode.name,note,Arr,Dep) #%>% 
 #  filter(tail == "C-FKSL")
@@ -14,9 +14,11 @@ code93_1 <- code93 %>% group_by(tail) %>%
 
 
 
+
 fct_code93 <- function(data){
   data %>% 
     select(-delay_arr) %>% 
+    
     bind_cols(
       data %>% add_row(.before = 1) %>% 
         slice_head(n = -1) %>% 

@@ -89,7 +89,7 @@ ui <- secure_app(
                            selected = "9 min. et +"))
       )),
     #  fluidRow("Nombre de segment(s) prévu(s): ",),
-    h2("Tableau d'évaluation des retards"),
+    h2("Tableau d'évaluation des retards (Délais au départ)"),
     rHandsontableOutput("test"),
     
     h2("Tableau de vols annulés"),
@@ -158,7 +158,7 @@ server <- function(input, output, session) {
              flt_numb = str_c(flt_numb," leg #",legNumber),
              delay_dep = difftime(depart_zulu_reel,depart_zulu_prevu, units = "mins"),
              delay_arr =difftime(arrivee_zulu_reel,arrivee_zulu_prevu, units = "mins")) %>% 
-      arrange(tail,depart_zulu_prevu) %>% 
+      arrange(tail,depart_zulu_reel) %>% 
       
       mutate(note = if_else(included_delay == "" | is.na(included_delay),
                             str_c("<b>",note,"</b>"),
@@ -171,28 +171,32 @@ server <- function(input, output, session) {
     #     }
   })
   
-  test27 <- reactive({
-    out <-  if(input$if_delay == FALSE){test26()
-    }else{
-      test26() %>% filter(
-        difftime(depart_zulu_reel,depart_zulu_prevu,units = "mins") %>% as.numeric() >= time_delay2())
-      #        difftime(departure.estimatedTime,depart_zulu_prevu,units = "mins") %>% as.numeric() >= input$min_retard)
-    }
-  })
+#  test27 <- reactive({
+#    out <-  if(input$if_delay == FALSE){test26()
+#    }else{
+#      test26() %>% filter(
+#        difftime(depart_zulu_reel,depart_zulu_prevu,units = "mins") %>% as.numeric() >= time_delay2())
+#    }
+#  })
   
   test28 <- reactive({
-    test27() %>% 
+    out <- test26() %>% 
+      filter(flightLegStatus.cancelled != TRUE) %>% 
       group_by(tail) %>% 
       group_split() %>% 
       map_df(fct_code93)
     
+    out <-  if(input$if_delay == FALSE){out
+    }else{
+      out %>% filter(
+        difftime(depart_zulu_reel,depart_zulu_prevu,units = "mins") %>% as.numeric() >= time_delay2())
+    }
   })
   
   
   
   output$test <- renderRHandsontable(
     test28() %>% 
-      filter(flightLegStatus.cancelled != TRUE) %>% 
       #        select(-starts_with("flightLegStatus")) %>% 
       mutate(Delay = difftime(depart_zulu_reel,depart_zulu_prevu,units = "mins"),
              Delay = str_c(as.character(Delay)," mins"),
@@ -277,6 +281,10 @@ server <- function(input, output, session) {
                halign = "htCenter") %>% 
       hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
   )
+  
+#  output$stat <- renderText(
+    
+#  )
   
 }
 
